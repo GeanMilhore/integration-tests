@@ -1,5 +1,8 @@
 package br.com.alura.leilao.dao;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 
@@ -8,18 +11,19 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import br.com.alura.leilao.model.Leilao;
 import br.com.alura.leilao.model.Usuario;
 import br.com.alura.leilao.util.JPAUtil;
 
-class UsuarioDaoTest {
+class LeilaoDaoTest {
 
-	private UsuarioDao dao;
+	private LeilaoDao dao;
 	private EntityManager em;
 
 	@BeforeEach
 	public void beforeEach() {
 		this.em = JPAUtil.getEntityManager();
-		this.dao = new UsuarioDao(em);
+		this.dao = new LeilaoDao(em);
 		em.getTransaction().begin();
 	}
 
@@ -27,27 +31,32 @@ class UsuarioDaoTest {
 	public void afterEach() {
 		em.getTransaction().rollback();
 	}
-
+	
 	@Test
-	void a_deveriaEncontrarUsuarioCadastrado() {
+	public void deveriaCriarUmLeilao() {
 		Usuario usuario = criarUsuario();
-		Usuario encontrado = this.dao.buscarPorUsername(usuario.getNome());
-		Assert.assertNotNull(encontrado);
+		Leilao leilao = new Leilao("Mochila", new BigDecimal("70"), LocalDate.now(), usuario);
+		
+		leilao = dao.salvar(leilao);
+		
+		Leilao salvo = dao.buscarPorId(leilao.getId());
+		Assert.assertNotNull(salvo);
 	}
-
+	 
 	@Test
-	void b_naoDeveriaEncontrarUsuarioCadastrado() {
-		criarUsuario();
-		Assert.assertThrows(NoResultException.class, () -> this.dao.buscarPorUsername("beltrano"));
-	}
-
-	@Test
-	void deveriaRemoverUmUsuario() {
+	public void deveriaAtualizarUmLeilao() {
 		Usuario usuario = criarUsuario();
-
-		dao.deletar(usuario);
-		Assert.assertThrows(NoResultException.class, () -> this.dao.buscarPorUsername(usuario.getNome()));
-
+		Leilao leilao = new Leilao("Mochila", new BigDecimal("70"), LocalDate.now(), usuario);
+		
+		leilao = dao.salvar(leilao);
+		
+		leilao.setNome("Celular");
+		leilao.setValorInicial(new BigDecimal("400"));
+		
+		leilao = dao.salvar(leilao);
+		
+		Leilao salvo = dao.buscarPorId(leilao.getId());
+		Assert.assertEquals("Celular", salvo.getNome());
 	}
 
 	private Usuario criarUsuario() {
